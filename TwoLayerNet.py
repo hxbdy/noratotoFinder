@@ -1,5 +1,7 @@
 import numpy as np
 from PIL import Image
+import os
+import sys
 
 class TowLayerNet:
     def __init__(self,input_size,hidden_size,output_size,weight_init_std=0.01):
@@ -74,14 +76,14 @@ class TowLayerNet:
         it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
         while not it.finished:
             idx=it.multi_index
-            print(str(idx)+"の要素の勾配の計算を開始")
             tmp_val=x[idx]
             x[idx]=float(tmp_val)+h
             fxh1=f(x)
             x[idx]=float(tmp_val)-h
             fxh2=f(x)
             grad[idx]=(fxh1-fxh2)/(2*h)
-            print("勾配 : "+str(grad[idx]))
+            os.system('cls')
+            print(str(idx)+" : "+str(grad[idx]))
             x[idx]=tmp_val
             it.iternext()
         return grad
@@ -151,3 +153,70 @@ class TowLayerNet:
             x_train.append(img_pixels)
             t_train.append(teach)
         return x_train,t_train
+
+    def saveGradient(self,par):
+        '''
+        勾配をテキストに保存する
+        '''
+        path_w='gradient'+par+'.txt'
+        f=open(path_w,mode='w')
+        it = np.nditer(self.params[par], flags=['multi_index'], op_flags=['readwrite'])
+        while not it.finished:
+            idx=it.multi_index
+            f.write(str(self.params[par][idx]))
+            f.write("\n")
+            it.iternext()
+        f.close()
+
+    def loadGradient(self,par):
+        '''
+        勾配を読みこむ
+        '''
+        path_r='gradient'+par+'.txt'
+        with open(path_r) as f:
+            l = f.readlines()
+
+        it = np.nditer(self.params[par], flags=['multi_index'], op_flags=['readwrite'])
+        cnt=0
+        while not it.finished:
+            idx=it.multi_index
+            self.params[par][idx]=l[cnt]
+            it.iternext()
+            cnt+=1
+
+    def getGradient(self):
+        '''各パラメータを保存する'''
+        self.saveGradient('W1')
+        self.saveGradient('b1')
+        self.saveGradient('W2')
+        self.saveGradient('b2')
+
+    def setGradient(self):
+        '''各パラメータを設定する'''
+        self.loadGradient('W1')
+        self.loadGradient('b1')
+        self.loadGradient('W2')
+        self.loadGradient('b2')
+
+    def judge(self,x):
+        index=np.argmax(x)
+        if index==0:
+            print("明日原")
+        elif index==1:
+            print("井田")
+        elif index==2:
+            print("黒木")
+        elif index==3:
+            print("ノブチナ")
+        elif index==4:
+            print("その他")
+        elif index==5:
+            print("パトリシア")
+        elif index==6:
+            print("ルーシア")
+        elif index==7:
+            print("シャチ")
+        elif index==8:
+            print("田中")
+        elif index==9:
+            print("ユーラシア")
