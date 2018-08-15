@@ -20,6 +20,9 @@ class TowLayerNet:
     def sigmoid(self,x):
         '''シグモイド関数'''
         return 1/(1+np.exp(-x))
+
+    def sigmoid_grad(self,x):
+        return (1.0 - self.sigmoid(x)) * self.sigmoid(x)
     
     def ReLU(self,x):
         '''ReLU関数'''
@@ -82,13 +85,12 @@ class TowLayerNet:
             x[idx]=float(tmp_val)-h
             fxh2=f(x)
             grad[idx]=(fxh1-fxh2)/(2*h)
-            os.system('cls')
-            print(str(idx)+" : "+str(grad[idx]))
             x[idx]=tmp_val
             it.iternext()
         return grad
 
     def numericalGradient(self,x,t):
+        '''数値偏微分'''
         print("勾配の計算を開始")
         loss_W=lambda W:self.loss(x,t)
         grads={}
@@ -100,6 +102,32 @@ class TowLayerNet:
         grads['W2']=self.numericalGradientFunc(loss_W,self.params['W2'])
         print("b2の勾配の計算を開始")
         grads['b2']=self.numericalGradientFunc(loss_W,self.params['b2'])
+        return grads
+    
+    def gradient(self, x, t):
+        '''偏微分'''
+        W1, W2 = self.params['W1'], self.params['W2']
+        b1, b2 = self.params['b1'], self.params['b2']
+        grads = {}
+        
+        batch_num = x.shape[0]
+        
+        # forward
+        a1 = np.dot(x, W1) + b1
+        z1 = self.sigmoid(a1)
+        a2 = np.dot(z1, W2) + b2
+        y = self.softmax(a2)
+        
+        # backward
+        dy = (y - t) / batch_num
+        grads['W2'] = np.dot(z1.T, dy)
+        grads['b2'] = np.sum(dy, axis=0)
+        
+        da1 = np.dot(dy, W2.T)
+        dz1 = self.sigmoid_grad(a1) * da1
+        grads['W1'] = np.dot(x.T, dz1)
+        grads['b1'] = np.sum(dz1, axis=0)
+
         return grads
 
     def numericalDescent(self,f,init_x,lr=0.1,step_num=100):
@@ -131,6 +159,25 @@ class TowLayerNet:
     def loss(self,x,t):
         y=self.predict(x)
         return self.crossEntropyError(y,t)
+
+    def load_test(self,path,data_max):
+        '''
+        テストデータの読み込み
+        path:画像までのパス
+        data_max:読みこむ画像数
+        '''
+        x_test=[]
+        for i in range(data_max):
+            img_pixels = []
+            img = Image.open(path+str(i)+'.jpg')
+            gray_img = img.convert('L')
+            width, height = gray_img.size
+            for y in range(height):
+                for x in range(width):
+                    img_pixels.append(gray_img.getpixel((x,y))/255.0)
+            img_pixels = np.array(img_pixels)
+            x_test.append(img_pixels)
+        return x_test
 
     def load_train(self,path,data_max,teach):
         '''
@@ -166,6 +213,13 @@ class TowLayerNet:
             f.write(str(self.params[par][idx]))
             f.write("\n")
             it.iternext()
+        f.close()
+
+    def saveLoss(self,loss):
+        path_w='loss.txt'
+        f=open(path_w,mode='w')
+        for i in loss:
+            f.write(str(i)+"\n")
         f.close()
 
     def loadGradient(self,par):

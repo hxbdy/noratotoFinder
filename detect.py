@@ -1,3 +1,7 @@
+'''
+顔の分類を行う
+'''
+
 import cv2
 import os
 
